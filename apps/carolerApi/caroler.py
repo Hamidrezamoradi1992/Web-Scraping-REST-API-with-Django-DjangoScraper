@@ -2,6 +2,10 @@ from .models import Category, Music
 from pprint import pprint
 from bs4 import BeautifulSoup
 import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 def new_music_caroler():
@@ -96,27 +100,12 @@ def new_music_caroler():
 
 
 def searchmusic(title, actor):
-    pass
-# print(soup.find('div',attrs={'class':'mf_rw'}).find('main').find('div').find('article').get('data-artist',None))
-# soup.find('div',attrs={'class':'mf_rw'}).find('main').find('div').find('article')
-# all_class = soup.find('div',attrs={'class':'mf_rw'}).find('main').find('div').find_all('article',{'class':'mf_pst'})
-# body > div.mf_rw > main > div > article:nth-child(2)
-# print((soup.find('div',attrs={'class':'mf_rw'}).find('main').find('div').find('article').find('header').find('h2').find('a').get('href',None)))
-# for s in all_class:
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
-# print(s.get('data-artist',None))
-# print(s.find('header').find('h2').find('a').get('href',None))
-# from selenium import webdriver
-# from selenium.webdriver.chrome.options import Options
-# from selenium.webdriver.chrome.service import Service
-# from webdriver_manager.chrome import ChromeDriverManager
-
-# options = Options()
-# options.add_argument('--headless')
-# options.add_argument('--no-sandbox')
-# options.add_argument('--disable-dev-shm-usage')
-# driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-#
-# driver.get("https://python.org")
-# print(driver.)
-# driver.close()
+    driver.get("https://www.teh-music.com/")
+    print(driver.title)
+    driver.close()
