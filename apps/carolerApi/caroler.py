@@ -15,7 +15,7 @@ def new_music_caroler():
     last_page = 10 if 10 < (c := int(pages[len(pages) - 2].find('a').get('href').split('/')[-2])) else c
     list_url_music = []
     # , last_page + 1
-    for i in range(1,last_page + 1):
+    for i in range(1, last_page + 1):
         url = 'https://www.teh-music.com/music/page/{}/'.format(i)
         response = requests.get(url)
         soup2 = BeautifulSoup(response.content, 'html.parser')
@@ -65,12 +65,12 @@ def new_music_caroler():
                 s = i.get('href').split(" ")
                 link_downloads.append(str.join('%20', s))
             list_cat = [i.strip() for i in category.strip().split('،')]
-            for categories in list_cat:
+            for categories in list_cat[1::]:
                 try:
                     Category.objects.create(title=categories.strip())
                 except Exception as e:
                     print(e)
-            list_cat2 = Category.objects.filter(title__in=list_cat)
+            list_cat2 = Category.objects.filter(title__in=list_cat[1::])
             url_downloads = (dict(zip([int(link.get('title').split(" ")[4]) for link in link_download],
                                       [link for link in link_downloads])))
             cover = str.join("%20", cover_music)
@@ -94,6 +94,9 @@ def new_music_caroler():
             # print(times)
             # print('\n' * 3)
 
+
+def searchmusic(title, actor):
+    pass
 # print(soup.find('div',attrs={'class':'mf_rw'}).find('main').find('div').find('article').get('data-artist',None))
 # soup.find('div',attrs={'class':'mf_rw'}).find('main').find('div').find('article')
 # all_class = soup.find('div',attrs={'class':'mf_rw'}).find('main').find('div').find_all('article',{'class':'mf_pst'})
