@@ -23,3 +23,17 @@ class MusicCarolerApiListView(ListAPIView):
         return Response(self.serializer_class(self.get_queryset(), many=True).data)
 
 
+class SearchMusicView(APIView):
+    def get(self, request:Request, actor=None, title=None):
+        music = Music.objects.filter(actor_name__icontains=actor)
+        if music.exists():
+            music_title = music.filter(title_music__icontains=title)
+            if music_title.exists():
+                serializer = MusicSerializers(music_title, many=True)
+                return Response(serializer.data)
+        flag = searchmusic(title=title, actor=actor)
+        if flag:
+            music = Music.objects.filter(title_music=title, actor_name=actor)
+            serializer = MusicSerializers(music, many=True)
+            return Response(serializer.data)
+        return Response(status=status.HTTP_404_NOT_FOUND)
