@@ -12,3 +12,11 @@ class DeleteLogic(models.Model):
 
     class Meta:
         abstract = True
+
+
+class DailyVisit(models.Model):
+    date = models.DateTimeField(auto_now_add=True)
+    count = models.PositiveIntegerField(default=0)
+    url = models.URLField(max_length=250,null=True, blank=True)
+    user = models.CharField(max_length=250, null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
