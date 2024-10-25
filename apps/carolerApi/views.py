@@ -25,7 +25,7 @@ class MusicCarolerApiListView(ListAPIView):
         new_music_caroler()
         return Response(self.serializer_class(self.get_queryset(), many=True).data)
 
-
+@method_decorator(cache_page(10), name='dispatch')
 class SearchMusicView(APIView):
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
@@ -52,7 +52,7 @@ class SearchMusicView(APIView):
 
         return Response({'message': 'nodata'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator(cache_page(10), name='dispatch')
 class SearchMusicCategoryView(APIView):
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
