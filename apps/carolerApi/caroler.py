@@ -1,8 +1,10 @@
+from enum import UNIQUE
+
 from selenium.webdriver.common.by import By
 from time import sleep
 
 from selenium.webdriver.common.keys import Keys
-
+from django.db.utils import IntegrityError
 from .models import Category, Music
 from pprint import pprint
 from bs4 import BeautifulSoup
@@ -77,7 +79,7 @@ def new_music_caroler(ur=None):
             for categories in list_cat[1::]:
                 try:
                     Category.objects.create(title=categories.strip())
-                except Exception as e:
+                except IntegrityError as e:
                     print(e)
             list_cat2 = Category.objects.filter(title__in=list_cat[1::])
             url_downloads = (dict(zip([int(link.get('title').split(" ")[4]) for link in link_download],
@@ -192,7 +194,7 @@ def searchmusic(title):
                 for categories in list_cat[1::]:
                     try:
                         Category.objects.create(title=categories.strip())
-                    except Exception as e:
+                    except IntegrityError as e:
                         print(e)
                 list_cat2 = Category.objects.filter(title__in=list_cat[1::])
                 url_downloads = (dict(zip([int(link.get('title').split(" ")[4]) for link in link_download],
@@ -208,7 +210,7 @@ def searchmusic(title):
                                              link_downloads_300=url_downloads[320])
                     m.music_category.add(*list_cat2)
                     m.save()
-                except Exception as e:
+                except IntegrityError as e:
                     print(e)
                 return True
 
@@ -252,7 +254,7 @@ def searchmusic(title):
             for categories in list_cat:
                 try:
                     Category.objects.create(title=categories.strip())
-                except Exception as e:
+                except UNIQUE as e:
                     print(e)
             for i in list_tracks:
                 link_download = [d.find('a') for d in i.find_all('div', {'class': 'dl'})]
