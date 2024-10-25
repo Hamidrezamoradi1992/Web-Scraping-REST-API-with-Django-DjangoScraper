@@ -44,3 +44,5 @@ class Music(DeleteLogic):
         verbose_name_plural = 'Musics'
         verbose_name = 'music'
         indexes = [models.Index(fields=['title_music', 'actor_name'])]
+
+
