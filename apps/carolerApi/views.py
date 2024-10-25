@@ -12,6 +12,7 @@ from apps.carolerApi.serializers import MusicSerializers
 from django.db.models import Q
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
+
 # Create your views here.
 
 @method_decorator(cache_page(10), name='dispatch')
@@ -27,16 +28,17 @@ class MusicCarolerApiListView(ListAPIView):
 
 class SearchMusicView(APIView):
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
     def get(self, request: Request, actors=None):
         title = actors.strip().split('،')[1]
-        actor=actors.strip().split('،')[0]
-        print('a',actor,"\n",len(title))
+        actor = actors.strip().split('،')[0]
+        print('a', actor, "\n", len(title))
         music = Music.objects.filter(actor_name__icontains=actor)
         if music.exists():
-            if len(title)== 0:
+            if len(title) == 0:
                 serializer = MusicSerializers(music, many=True)
                 return Response(serializer.data)
-            m=music.filter(title_music__icontains=title)
+            m = music.filter(title_music__icontains=title)
             if m.exists():
                 serializer = MusicSerializers(m, many=True)
                 return Response(serializer.data)
@@ -48,4 +50,16 @@ class SearchMusicView(APIView):
             serializer = MusicSerializers(music, many=True)
             return Response(serializer.data)
 
-        return Response({'message':'nodata'},status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'nodata'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SearchMusicCategoryView(APIView):
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def get(self, request: Request, category):
+        category = Category.objects.filter(title__icontains=category)
+        if category.exists():
+            music = Music.objects.filter(music_category__in=category)
+            serializer = MusicSerializers(music, many=True)
+            return Response(serializer.data)
+        return Response({'message': 'nodata'}, status=status.HTTP_404_NOT_FOUND)
