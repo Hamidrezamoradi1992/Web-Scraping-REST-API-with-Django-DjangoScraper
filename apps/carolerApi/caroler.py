@@ -1,18 +1,288 @@
 from enum import UNIQUE
+from pprint import pprint
 
 from selenium.webdriver.common.by import By
 from time import sleep
-
 from selenium.webdriver.common.keys import Keys
 from django.db.utils import IntegrityError
 from .models import Category, Music
-from pprint import pprint
 from bs4 import BeautifulSoup
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+
+
+class CarolerApi:
+    URL = ''
+    RESULT_MUSIC = {}
+
+    @staticmethod
+    def new_music():
+        CarolerApi.URL = 'https://www.teh-music.com/music/'
+        try:
+            url = CarolerApi.URL
+            response = requests.get(url)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            list_page = CarolerApi.list_music_url_page(soup)
+            CarolerApi._parting_caroler(list_page)
+            CreateDateInDatabase.handler()
+        except Exception as error:
+            print(error)
+
+    @staticmethod
+    def _count_page(soup) -> int:
+        try:
+            pages = soup.find('ul', {'class': 'page-numbers'}).find_all('li')
+            count_page = 10 if 10 < (c := int(pages[len(pages) - 2].find('a').get('href').split('/')[-2])) else c
+            return count_page
+        except Exception as error:
+            print("count_page", error)
+            count_page = 0
+            return count_page
+
+    @staticmethod
+    def search_music(context: str = "") -> None:
+        try:
+            options = Options()
+            options.add_argument('--headless')
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            driver.get("https://www.teh-music.com/")
+            driver.find_element(By.XPATH, '/html/body/header/div[2]/div/form/input[1]').send_keys(context)
+            driver.find_element(By.XPATH, '/html/body/header/div[2]/div/form/input[2]').send_keys(Keys.ENTER)
+            sleep(2)
+            search_url = driver.current_url
+            sleep(2)
+            driver.close()
+
+            CarolerApi.URL = search_url
+
+            url = CarolerApi.URL
+            response = requests.get(url)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            list_page = CarolerApi.list_music_url_page(soup)
+            print(list_page)
+            CarolerApi._parting_caroler(list_page)
+            CreateDateInDatabase.handler()
+        except Exception as error:
+            print('search_music', error)
+
+    @staticmethod
+    def list_music_url_page(soup) -> list:
+        count_page = CarolerApi._count_page(soup)
+        list_url_music = []
+        if count_page == 0:
+            url = f'{CarolerApi.URL}'
+            response = requests.get(url)
+            soup2 = BeautifulSoup(response.content, 'html.parser')
+            list_item_in_page = soup2.find(
+                'article').find(
+                'div', {'class': 'new_music'}).find(
+                'div', {'class': 'list'}).find_all(
+                'div', {'class': 'item'})
+            list_url_music += [i.find(
+                'div', {'class': 'poster'}).find('a').get('href') for i in list_item_in_page]
+
+        else:
+            for i in range(0, count_page + 1):
+                url = f'{CarolerApi.URL}page/{i}/'
+                print(url)
+                response = requests.get(url)
+                soup2 = BeautifulSoup(response.content, 'html.parser')
+                list_item_in_page = soup2.find(
+                    'article').find(
+                    'div', {'class': 'new_music'}).find(
+                    'div', {'class': 'list'}).find_all(
+                    'div', {'class': 'item'})
+                list_url_music += [i.find(
+                    'div', {'class': 'poster'}).find('a').get('href') for i in list_item_in_page]
+                print('page {}'.format(i))
+        return list_url_music
+
+    @staticmethod
+    def _parting_caroler(urls: list) -> None:
+        database_url_music = [i[0] for i in Music.objects.all().values_list('url_detail_page')]
+        for url in urls:
+            print(url)
+            if url not in database_url_music:
+                response = requests.get(url)
+                soup_detail_music = BeautifulSoup(response.content, 'html.parser')
+                soup_album = soup_detail_music.find('div', {'class': 'tracks'})
+                if soup_album is None:
+
+                    title_music = CarolerApi._fetch_title_music(soup_detail_music)
+                    cover_music = CarolerApi._fetch_cover_music(soup_detail_music)
+                    link_download = CarolerApi._fetch_link_download(soup_detail_music)
+                    time = CarolerApi._fetch_time(soup_detail_music)
+                    actor = CarolerApi._fetch_actor(soup_detail_music)
+                    category = CarolerApi._fetch_category(soup_detail_music)
+                    CarolerApi.RESULT_MUSIC.setdefault(url, {
+                        'title_music_album': None,
+                        'cover_music': cover_music,
+                        title_music: link_download,
+                        'time': time,
+                        'actor': actor,
+                        'category': category})
+
+                else:
+                    title_music = CarolerApi._fetch_title_music(soup_detail_music)
+                    cover_music = CarolerApi._fetch_cover_music(soup_detail_music)
+                    link_download = CarolerApi._fetch_link_download_album(soup_detail_music)
+                    time = CarolerApi._fetch_time(soup_detail_music)
+                    actor = CarolerApi._fetch_actor(soup_detail_music)
+                    category = CarolerApi._fetch_category(soup_detail_music)
+                    CarolerApi.RESULT_MUSIC.setdefault(url, {
+                        'title_music_album': title_music,
+                        'cover_music': cover_music,
+                        'link_download': link_download,
+                        'time': time,
+                        'actor': actor,
+                        'category': category})
+        return None
+
+    @staticmethod
+    def _fetch_title_music(soup_detail_music):
+        try:
+            title_music = soup_detail_music.find(
+                'main').find(
+                'div', {'class': 'top'}).find(
+                'div', {'class': 'left_side'}).find(
+                'div',
+                {'class': 'up'}).find(
+                'article').find(
+                'section').find_all(
+                'p')[0].get_text().split(
+                'به نام ')[1]
+        except Exception:
+            title_music = soup_detail_music.find(
+                'main').find(
+                'div', {'class': 'top'}).find(
+                'div', {'class': 'left_side'}).find(
+                'div', {'class': 'up'}).find('article').find(
+                'section').find_all(
+                'p')[0].get_text().split('به نام ')[1]
+        print('title_music', title_music)
+        return title_music
+
+    @staticmethod
+    def _fetch_actor(soup_detail_music):
+        # body > main > div.top > div.left_side.fr > div.up > article > div.singer > a
+        try:
+            actor = (soup_detail_music.find(
+                'main').find(
+                'div', {'class': 'top'}).find(
+                'div', {'class': 'left_side'}).find(
+                'div', {'class': 'up'}).find(
+                'article').find(
+                'div', {'class': 'singer'}).find(
+                'a').get_text())
+        except Exception:
+            actor = (soup_detail_music.find(
+                'main').find('div', {'class': 'top'}).
+                     find(
+                'div', {'class': 'left_side'}).find(
+                'div', {'class': 'up'}).find(
+                'article').find(
+                'div', {'class': 'singer'}).get_text())
+        print('actor', actor)
+        return actor
+        # body > main > div.top > div.left_side.fr > div.down > div.stat > div: nth - child(3) > i
+
+    @staticmethod
+    def _fetch_time(soup_detail_music):
+        time = soup_detail_music.find(
+            'main').find(
+            'div', {'class': 'top'}).find(
+            'div', {'class': 'left_side'}).find(
+            'div', {'class': 'down'}).find(
+            'div', {'class': 'stat'}).childGenerator()
+        print('time', time)
+        return time
+
+    @staticmethod
+    def _fetch_category(soup_detail_music):
+        # body > main > div.top > div.left_side.fr > div.down > div.stat > div.item.categorys > a: nth - child(4)
+        try:
+            category = soup_detail_music.find(
+                'main').find(
+                'div', {'class': 'top'}).find(
+                'div', {'class': 'left_side'}).find(
+                'div', {'class': 'down'}).find(
+                'div', {'class': 'stat'}).find(
+                'div', {'class': 'categorys'}).get_text()
+        except Exception:
+            category = soup_detail_music.find(
+                'main').find(
+                'div', {'class': 'top'}).find(
+                'div', {'class': 'left_side'}).find(
+                'div', {'class': 'down'}).find(
+                'div', {'class': 'stat'}).find(
+                'div', {'class': 'item'}).find(
+                'a').get_text()
+
+        print('category', category)
+        return category
+        # body > main > div.top > div.left_side.fr > div.down > div.dlbox.add_dl.end > div: nth - child(1) > a
+
+    @staticmethod
+    def _fetch_link_download(soup_detail_music):
+        link_download = soup_detail_music.find(
+            'main').find('div', {'class': 'top'}).find(
+            'div', {'class': 'left_side'}).find(
+            'div', {'class': 'down'}).find(
+            'div', {'class': 'add_dl'}).find_all('a')
+        # body > main > div.top > div.poster.fr > a > figure > img
+        return link_download
+
+    @staticmethod
+    def _fetch_link_download_album(soup_detail_music) -> dict:
+        list_tracks = soup_detail_music.find(
+            'div', {'class': 'album-player'}).find(
+            'div', {'class': 'tracks'}).find_all(
+            'div', {'class': 'item'})
+
+        url_downloads = {}
+        for i in list_tracks:
+            title_music = i.find('div', {'class': 'name'}).get_text()
+            link_download = [d.find('a') for d in i.find_all('div', {'class': 'dl'})]
+            link_downloads = []
+            for i in link_download:
+                url_split = i.get('href').split(" ")
+                link_downloads.append(str.join('%20', url_split))
+            url_downloads.setdefault(title_music, list(zip([128, 320], [link for link in link_downloads])))
+        return url_downloads
+
+    @staticmethod
+    def _fetch_cover_music(soup_detail_music):
+        cover_music = soup_detail_music.find(
+            'main').find('div', {'class': 'top'}).find(
+            'div', {'class': 'poster'}).find('img').get('src').split(' ')
+        return cover_music
+
+    @staticmethod
+    def fetch_one_album(soup):
+        pass
+
+
+class CreateDateInDatabase:
+    @staticmethod
+    def handler():
+        pprint(CarolerApi.RESULT_MUSIC)
+        print('def handler')
+
+
+
+
+
+
+
+
+
+
+
 
 
 def new_music_caroler(ur=None):
@@ -90,12 +360,14 @@ def new_music_caroler(ur=None):
             # print(actor)
             # print(urls)
             try:
-                m = Music.objects.create(title_music=title_music, actor_name=actor, url_detail_page=urls,
-                                         url_picture=cover, link_downloads_128=url_downloads[128],
-                                         link_downloads_300=url_downloads[320])
-                m.music_category.add(*list_cat2)
-                m.save()
-            except Exception as e:
+                music_detail, _ = Music.objects.get_or_create(title_music=title_music, actor_name=actor,
+                                                              url_detail_page=urls,
+                                                              url_picture=cover, link_downloads_128=url_downloads[128],
+                                                              link_downloads_300=url_downloads[320])
+                if _:
+                    music_detail.music_category.add(*list_cat2)
+                    music_detail.save()
+            except IntegrityError as e:
                 print(e)
 
             times = list(time)[5].get_text().split('\n\n\t\t\t\t\t\t\t')[1].split('\t\t\t\t\t\t')[0].split(' ')
