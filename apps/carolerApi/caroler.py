@@ -25,7 +25,7 @@ class CarolerApi:
             url = CarolerApi.URL
             response = requests.get(url)
             soup = BeautifulSoup(response.content, 'html.parser')
-            list_page = CarolerApi.list_music_url_page(soup)
+            list_page = CarolerApi._list_music_url_page(soup)
             CarolerApi._parting_caroler(list_page)
             CreateDateInDatabase.handler()
         except Exception as error:
@@ -63,16 +63,16 @@ class CarolerApi:
             url = CarolerApi.URL
             response = requests.get(url)
             soup = BeautifulSoup(response.content, 'html.parser')
-            list_page = CarolerApi.list_music_url_page(soup)
+            list_page = CarolerApi._list_music_url_page(soup)
             print(list_page)
             CarolerApi._parting_caroler(list_page)
             CreateDateInDatabase.handler()
         except Exception as error:
             print('search_music', error)
 
-    @staticmethod
-    def list_music_url_page(soup) -> list:
-        count_page = CarolerApi._count_page(soup)
+    @classmethod
+    def _list_music_url_page(cls,soup) -> list:
+        count_page = cls._count_page(soup)
         list_url_music = []
         if count_page == 0:
             url = f'{CarolerApi.URL}'
@@ -102,8 +102,8 @@ class CarolerApi:
                 print('page {}'.format(i))
         return list_url_music
 
-    @staticmethod
-    def _parting_caroler(urls: list) -> None:
+    @classmethod
+    def _parting_caroler(cls,urls: list) -> None:
         database_url_music = [i[0] for i in Music.objects.all().values_list('url_detail_page')]
         for url in urls:
             print(url)
@@ -113,13 +113,13 @@ class CarolerApi:
                 soup_album = soup_detail_music.find('div', {'class': 'tracks'})
                 if soup_album is None:
 
-                    title_music = CarolerApi._fetch_title_music(soup_detail_music)
-                    cover_music = CarolerApi._fetch_cover_music(soup_detail_music)
-                    link_download = CarolerApi._fetch_link_download(soup_detail_music)
-                    time = CarolerApi._fetch_time(soup_detail_music)
-                    actor = CarolerApi._fetch_actor(soup_detail_music)
-                    category = CarolerApi._fetch_category(soup_detail_music)
-                    CarolerApi.RESULT_MUSIC.setdefault(url, {
+                    title_music = cls._fetch_title_music(soup_detail_music)
+                    cover_music = cls._fetch_cover_music(soup_detail_music)
+                    link_download = cls._fetch_link_download(soup_detail_music)
+                    time = cls._fetch_time(soup_detail_music)
+                    actor = cls._fetch_actor(soup_detail_music)
+                    category =cls._fetch_category(soup_detail_music)
+                    cls.RESULT_MUSIC.setdefault(url, {
                         'title_music_album': None,
                         'cover_music': cover_music,
                         title_music: link_download,
@@ -128,13 +128,13 @@ class CarolerApi:
                         'category': category})
 
                 else:
-                    title_music = CarolerApi._fetch_title_music(soup_detail_music)
-                    cover_music = CarolerApi._fetch_cover_music(soup_detail_music)
-                    link_download = CarolerApi._fetch_link_download_album(soup_detail_music)
-                    time = CarolerApi._fetch_time(soup_detail_music)
-                    actor = CarolerApi._fetch_actor(soup_detail_music)
-                    category = CarolerApi._fetch_category(soup_detail_music)
-                    CarolerApi.RESULT_MUSIC.setdefault(url, {
+                    title_music = cls._fetch_title_music(soup_detail_music)
+                    cover_music = cls._fetch_cover_music(soup_detail_music)
+                    link_download = cls._fetch_link_download_album(soup_detail_music)
+                    time = cls._fetch_time(soup_detail_music)
+                    actor = cls._fetch_actor(soup_detail_music)
+                    category = cls._fetch_category(soup_detail_music)
+                    cls.RESULT_MUSIC.setdefault(url, {
                         'title_music_album': title_music,
                         'cover_music': cover_music,
                         'link_download': link_download,
@@ -262,9 +262,6 @@ class CarolerApi:
             'div', {'class': 'poster'}).find('img').get('src').split(' ')
         return cover_music
 
-    @staticmethod
-    def fetch_one_album(soup):
-        pass
 
 
 class CreateDateInDatabase:
