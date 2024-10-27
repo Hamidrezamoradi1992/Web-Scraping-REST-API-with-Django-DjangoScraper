@@ -24,12 +24,13 @@ class Category(DeleteLogic):
 
 
 class Music(DeleteLogic):
-    url_detail_page = models.CharField(max_length=250, unique=True)
-    actor_name = models.CharField(max_length=250)
-    music_category = models.ManyToManyField('Category',related_name='category', related_query_name='categories')
+    url_detail_page = models.CharField(max_length=250)
+    actor_name = models.CharField(max_length=100)
+    title_album = models.CharField(max_length=100,null=True, blank=True)
+    music_category = models.ManyToManyField('Category', related_name='category', related_query_name='categories')
     link_downloads_128 = models.URLField(max_length=250, blank=True, null=True)
     link_downloads_300 = models.URLField(max_length=250, blank=True, null=True)
-    title_music = models.CharField(max_length=250, unique=True)
+    title_music = models.CharField(max_length=250)
     url_picture = models.URLField(max_length=250, blank=True, null=True)
 
     def clean(self):
@@ -44,5 +45,3 @@ class Music(DeleteLogic):
         verbose_name_plural = 'Musics'
         verbose_name = 'music'
         indexes = [models.Index(fields=['title_music', 'actor_name'])]
-
-

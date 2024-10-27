@@ -1,16 +1,15 @@
-from django.shortcuts import render
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
-from apps.carolerApi.caroler import new_music_caroler, searchmusic
 from apps.carolerApi.models import Category, Music
 from rest_framework import status
 from apps.carolerApi.serializers import MusicSerializers
 from django.db.models import Q
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from .caroler import CarolerApi
 
 
 # Create your views here.
@@ -21,9 +20,10 @@ class MusicCarolerApiListView(ListAPIView):
     serializer_class = MusicSerializers
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
-    def get(self, request: Request):
-        new_music_caroler()
+    def get(self, request: Request, **kwargs):
+        CarolerApi.new_music()
         return Response(self.serializer_class(self.get_queryset(), many=True).data)
+
 
 @method_decorator(cache_page(10), name='dispatch')
 class SearchMusicView(APIView):
@@ -44,15 +44,19 @@ class SearchMusicView(APIView):
                 return Response(serializer.data)
 
         search_title = f'{title} {actor}'
-        flag = searchmusic(title=search_title)
-        if flag:
-            music = Music.objects.filter(title_music__icontains=title, actor_name__icontains=actor)
+        CarolerApi.search_music(context=search_title)
+        music = Music.objects.filter(Q(title_music__icontains=title) |
+                                     Q(actor_name__icontains=actor)) if title.__contains__('البوم', 'آلبوم') else (
+            Music.objects.filter(actor_name=actor))
+        print(music)
+        print(title.__contains__('البوم', 'آلبوم'))
+        if music.exists():
             serializer = MusicSerializers(music, many=True)
             return Response(serializer.data)
-
         return Response({'message': 'nodata'}, status=status.HTTP_404_NOT_FOUND)
 
-@method_decorator(cache_page(10), name='dispatch')
+
+# @method_decorator(cache_page(10), name='dispatch')
 class SearchMusicCategoryView(APIView):
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
