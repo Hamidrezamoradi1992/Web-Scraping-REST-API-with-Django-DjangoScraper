@@ -10,24 +10,24 @@ from apps.carolerApi.serializers import MusicSerializers
 from django.db.models import Q
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from .caroler import CarolerApi
-
+from apps.account.throttlings import VipThrottling
 
 # Create your views here.
 
-@method_decorator(cache_page(10), name='dispatch')
+@method_decorator(cache_page(20), name='get')
 class MusicCarolerApiListView(ListAPIView):
     queryset = Music.objects.all().order_by('music_category')
     serializer_class = MusicSerializers
-    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle,VipThrottling]
 
     def get(self, request: Request, **kwargs):
         CarolerApi.new_music()
         return Response(self.serializer_class(self.get_queryset(), many=True).data)
 
 
-@method_decorator(cache_page(10), name='dispatch')
+# @method_decorator(cache_page(60*10), name='dispatch')
 class SearchMusicView(APIView):
-    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle,VipThrottling]
 
     def get(self, request: Request, actors=None):
         title = actors.strip().split('،')[1]
@@ -58,7 +58,7 @@ class SearchMusicView(APIView):
 
 # @method_decorator(cache_page(10), name='dispatch')
 class SearchMusicCategoryView(APIView):
-    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle,VipThrottling]
 
     def get(self, request: Request, category):
         category = Category.objects.filter(title__icontains=category)

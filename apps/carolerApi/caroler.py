@@ -12,6 +12,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+
 
 
 class CarolerApi:
@@ -108,7 +111,7 @@ class CarolerApi:
         for url in urls:
             print(url)
             if url not in database_url_music:
-                print('_parting_caroler',True)
+                print('_parting_caroler', True)
                 response = requests.get(url)
                 soup_detail_music = BeautifulSoup(response.content, 'html.parser')
                 soup_album = soup_detail_music.find('div', {'class': 'tracks'})
@@ -291,7 +294,6 @@ class CreateDateInDatabase:
                 musics.music_category.add(*category)
                 musics.save()
                 print(True)
-
 
     @staticmethod
     def _set_category(list_category: list) -> list:

@@ -58,16 +58,18 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
-
 REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
+        'rest_framework.throttling.UserRateThrottle',
+        'apps.account.throttlings.VipThrottling',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '2/min',  # For Anonymous usercore_dailyvisit
-        'user': '2/day',  # For Registred user
-    }
+        'anon': '2/day',  # For Anonymous usercore_dailyvisit
+        'user': '2000/day',  # For Registred user
+        'vip': '3/min'
+
+    },
 }
 
 TEMPLATES = [
@@ -136,3 +138,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://0.0.0.0:5555/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
