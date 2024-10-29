@@ -6,7 +6,7 @@ class VipThrottling(UserRateThrottle):
 
     def get_cache_key(self, request, view):
 
-        if request.user and request.user.is_authenticated and request.user.is_superuser:
+        if request.user and request.user.is_authenticated and request.user.permissions_vip:
             ident = request.user.pk
         else:
             return None
@@ -21,7 +21,7 @@ class UsersThrottle(UserRateThrottle):
     scope = 'users'
 
     def get_cache_key(self, request, view):
-        if request.user and request.user.is_authenticated and not request.user.is_superuser:
+        if request.user and request.user.is_authenticated and not request.user.permissions_vip:
             ident = request.user.pk
         else:
             return None

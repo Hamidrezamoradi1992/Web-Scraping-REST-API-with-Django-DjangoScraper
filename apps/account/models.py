@@ -32,6 +32,7 @@ class User(AbstractUser):
     name = models.CharField(max_length=20, null=True, blank=True)
     image = models.ImageField(upload_to='profile/', null=True, blank=True)
     birthday = models.DateField(null=True, blank=True)
+    permissions_vip = models.BooleanField(default=False)
     username = None
 
     USERNAME_FIELD = 'phone_number'

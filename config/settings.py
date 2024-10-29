@@ -70,6 +70,10 @@ REST_FRAMEWORK = {
         'vip': '2/min'
 
     },
+    'DEFAULT_PERMISSION_CLASSES':{
+        'rest_framework.permissions.IsAuthenticated',
+        'apps.account.permissions.VipPermission'
+    }
 }
 
 TEMPLATES = [

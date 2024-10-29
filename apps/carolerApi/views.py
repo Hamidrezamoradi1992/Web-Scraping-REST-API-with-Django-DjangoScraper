@@ -11,7 +11,8 @@ from django.db.models import Q
 from rest_framework.throttling import AnonRateThrottle
 from .caroler import CarolerApi
 from apps.account.throttling import VipThrottling,UsersThrottle
-
+from rest_framework.permissions import IsAuthenticated
+from apps.account.permissions import VipPermission
 # Create your views here.
 
 @method_decorator(cache_page(60*10), name='get')
@@ -19,6 +20,7 @@ class MusicCarolerApiListView(ListAPIView):
     queryset = Music.objects.all().order_by('music_category')
     serializer_class = MusicSerializers
     throttle_classes = [AnonRateThrottle, UsersThrottle,VipThrottling]
+    permission_classes = [IsAuthenticated,VipPermission]
 
     def get(self, request: Request, **kwargs):
         CarolerApi.new_music()
@@ -27,7 +29,8 @@ class MusicCarolerApiListView(ListAPIView):
 
 # @method_decorator(cache_page(60*10), name='dispatch')
 class SearchMusicView(APIView):
-    throttle_classes = [AnonRateThrottle, UsersThrottle,VipThrottling]
+    throttle_classes = [UsersThrottle,VipThrottling]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, actors=None):
         title = actors.strip().split('،')[1]
@@ -46,10 +49,9 @@ class SearchMusicView(APIView):
         search_title = f'{title} {actor}'
         CarolerApi.search_music(context=search_title)
         music = Music.objects.filter(Q(title_music__icontains=title) |
-                                     Q(actor_name__icontains=actor)) if title.__contains__('البوم', 'آلبوم') else (
+                                     Q(actor_name__icontains=actor)) if title in ['البوم', 'آلبوم'] else (
             Music.objects.filter(actor_name=actor))
-        print(music)
-        print(title.__contains__('البوم', 'آلبوم'))
+        print(title in ['البوم', 'آلبوم'])
         if music.exists():
             serializer = MusicSerializers(music, many=True)
             return Response(serializer.data)
@@ -58,7 +60,8 @@ class SearchMusicView(APIView):
 
 # @method_decorator(cache_page(10), name='dispatch')
 class SearchMusicCategoryView(APIView):
-    throttle_classes = [AnonRateThrottle, UsersThrottle,VipThrottling]
+    # throttle_classes = [AnonRateThrottle, UsersThrottle,VipThrottling]
+    permission_classes = []
 
     def get(self, request: Request, category):
         category = Category.objects.filter(title__icontains=category)
