@@ -61,13 +61,13 @@ ROOT_URLCONF = 'config.urls'
 REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-        'apps.account.throttlings.VipThrottling',
+        'apps.account.throttling.VipThrottling',
+        # 'apps.account.throttling.UsersThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '2/day',  # For Anonymous usercore_dailyvisit
-        'user': '2000/day',  # For Registred user
-        'vip': '3/min'
+        'users': '10/day',  # For Registred user
+        'vip': '2/min'
 
     },
 }
