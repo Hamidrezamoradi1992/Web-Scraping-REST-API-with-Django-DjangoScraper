@@ -10,27 +10,31 @@ from apps.carolerApi.serializers import MusicSerializers
 from django.db.models import Q
 from rest_framework.throttling import AnonRateThrottle
 from .caroler import CarolerApi
-from apps.account.throttling import VipThrottling,UsersThrottle
+from apps.account.throttling import VipThrottling, UsersThrottle
 from rest_framework.permissions import IsAuthenticated
 from apps.account.permissions import VipPermission
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+
+
 # Create your views here.
 
-@method_decorator(cache_page(60*10), name='get')
+# @method_decorator(cache_page(60 * 10), name='get')
 class MusicCarolerApiListView(ListAPIView):
     queryset = Music.objects.all().order_by('music_category')
     serializer_class = MusicSerializers
-    throttle_classes = [AnonRateThrottle, UsersThrottle,VipThrottling]
-    permission_classes = [IsAuthenticated,VipPermission]
+    throttle_classes = [AnonRateThrottle, UsersThrottle, VipThrottling]
+    permission_classes = [IsAuthenticated, VipPermission]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
 
     def get(self, request: Request, **kwargs):
         CarolerApi.new_music()
         return Response(self.serializer_class(self.get_queryset(), many=True).data)
 
 
-# @method_decorator(cache_page(60*10), name='dispatch')
 class SearchMusicView(APIView):
-    throttle_classes = [UsersThrottle,VipThrottling]
+    throttle_classes = [UsersThrottle, VipThrottling]
     permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
 
     def get(self, request: Request, actors=None):
         title = actors.strip().split('،')[1]
@@ -60,7 +64,8 @@ class SearchMusicView(APIView):
 
 # @method_decorator(cache_page(10), name='dispatch')
 class SearchMusicCategoryView(APIView):
-    # throttle_classes = [AnonRateThrottle, UsersThrottle,VipThrottling]
+    throttle_classes = [AnonRateThrottle, UsersThrottle, VipThrottling]
+    authentication_classes = []
     permission_classes = []
 
     def get(self, request: Request, category):

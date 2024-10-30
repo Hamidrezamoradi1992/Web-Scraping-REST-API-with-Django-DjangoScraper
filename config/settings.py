@@ -58,23 +58,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
-REST_FRAMEWORK = {
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'apps.account.throttling.VipThrottling',
-        # 'apps.account.throttling.UsersThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '2/day',  # For Anonymous usercore_dailyvisit
-        'users': '10/day',  # For Registred user
-        'vip': '2/min'
 
-    },
-    'DEFAULT_PERMISSION_CLASSES':{
-        'rest_framework.permissions.IsAuthenticated',
-        'apps.account.permissions.VipPermission'
-    }
-}
 
 TEMPLATES = [
     {
@@ -147,9 +131,33 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://0.0.0.0:5555/1',
+        'LOCATION': os.getenv('REDIS_URL'),
+        'KEY_PREFIX': 'REDIS1',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     }
+}
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'apps.account.throttling.VipThrottling',
+        'apps.account.throttling.UsersThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '2/day',
+        'users': '10/day',
+        'vip': '2/min'
+
+    },
+    'DEFAULT_PERMISSION_CLASSES':{
+        'rest_framework.permissions.IsAuthenticated',
+        'apps.account.permissions.VipPermission'
+    },
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+
 }

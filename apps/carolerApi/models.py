@@ -1,7 +1,7 @@
 from django.db import models
 from apps.core.models import DeleteLogic
 from django.core.exceptions import ValidationError
-
+from jdatetime import datetime
 
 # Create your models here.
 
@@ -32,11 +32,25 @@ class Music(DeleteLogic):
     link_downloads_300 = models.URLField(max_length=250, blank=True, null=True)
     title_music = models.CharField(max_length=250)
     url_picture = models.URLField(max_length=250, blank=True, null=True)
+    time_music = models.DateField(null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        if self.time_music:
+            time=self.time_music.split('-')
+            year=int(time[0])
+            month=int(time[1])
+            day=int(time[2])
+            jalali_date = datetime(year=year,month=month, day=day)
+            gregorian_date = jalali_date.togregorian()
+            self.time = gregorian_date.date()
+
+        super().save(*args, **kwargs)
     def clean(self):
         url = Music.objects.archive().all()
         if self.url_detail_page in url.url_detail_page:
             raise ValidationError("Url already exists")
+
+
 
     def __str__(self):
         return f'actor: {self.actor_name} // music: {self.title_music}'
