@@ -28,7 +28,7 @@ class CarolerApi:
             response = requests.get(url)
             soup = BeautifulSoup(response.content, 'html.parser')
             list_page = CarolerApi._list_music_url_page(soup,cont_page)
-            CarolerApi._parting_caroler(list_page)
+            CarolerApi._partition_caroler(list_page)
             CreateDateInDatabase.handler()
         except Exception as error:
             print(error)
@@ -65,7 +65,7 @@ class CarolerApi:
             response = requests.get(url)
             soup = BeautifulSoup(response.content, 'html.parser')
             list_page = CarolerApi._list_music_url_page(soup)
-            CarolerApi._parting_caroler(list_page)
+            CarolerApi._partition_caroler(list_page)
             CreateDateInDatabase.handler()
         except Exception as error:
             print('search_music', error)
@@ -103,12 +103,12 @@ class CarolerApi:
         return list_url_music
 
     @classmethod
-    def _parting_caroler(cls, urls: list) -> None:
+    def _partition_caroler(cls, urls: list) -> None:
         database_url_music = [i[0] for i in Music.objects.all().values_list('url_detail_page')]
         for url in urls:
             print(url)
             if url not in database_url_music:
-                print('_parting_caroler', True)
+                print('_partition_caroler', True)
                 response = requests.get(url)
                 soup_detail_music = BeautifulSoup(response.content, 'html.parser')
                 soup_album = soup_detail_music.find('div', {'class': 'tracks'})
@@ -167,7 +167,7 @@ class CarolerApi:
 
     @staticmethod
     def _fetch_actor(soup_detail_music):
-        print('caroler actor')
+
         # body > main > div.top > div.left_side.fr > div.up > article > div.singer > a
         try:
             actor = (soup_detail_music.find(
@@ -266,7 +266,7 @@ class CreateDateInDatabase:
                 actor = value['actor']
                 title_album = value['title_music_album']
                 for title_music, linc_download in value['link_download'].items():
-                    print('handler for2')
+
                     musics, _ = Music.objects.get_or_create(url_detail_page=url_detail_page,
                                                             title_album=title_album,
                                                             title_music=title_music,
@@ -286,7 +286,7 @@ class CreateDateInDatabase:
                 if categories is not None:
                     Category.objects.create(title=categories.strip())
             except IntegrityError as e:
-                print('CreateDateInDatabase.set_category', e)
+                print('CreateDateInDatabase.set_category')
         return Category.objects.filter(title__in=list_cat[1::])
 #
 # #
