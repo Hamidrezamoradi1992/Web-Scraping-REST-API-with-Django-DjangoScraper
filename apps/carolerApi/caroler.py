@@ -1,6 +1,3 @@
-from enum import UNIQUE
-from pprint import pprint
-
 from selenium.webdriver.common.by import By
 from time import sleep
 from selenium.webdriver.common.keys import Keys
@@ -12,35 +9,36 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from django.views.decorators.cache import cache_page
-from django.utils.decorators import method_decorator
+
 
 
 
 class CarolerApi:
     MONT = {'فروردین': 1, 'اردیبهشت': 2, 'خرداد': 3, 'تیر': 4, 'مرداد': 5, 'شهریور': 6, 'مهر': 7, 'آبان': 8,
-                'آذر': 9,'دی': 10, 'بهمن': 1, 'اسفند': 12}
+            'آذر': 9, 'دی': 10, 'بهمن': 1, 'اسفند': 12}
     URL = ''
     RESULT_MUSIC = {}
-
+    COUNT_PAGE=3
     @staticmethod
-    def new_music():
+    def new_music(cont_page=None):
+
         CarolerApi.URL = 'https://www.teh-music.com/music/'
         try:
             url = CarolerApi.URL
             response = requests.get(url)
             soup = BeautifulSoup(response.content, 'html.parser')
-            list_page = CarolerApi._list_music_url_page(soup)
+            list_page = CarolerApi._list_music_url_page(soup,cont_page)
             CarolerApi._parting_caroler(list_page)
             CreateDateInDatabase.handler()
         except Exception as error:
             print(error)
 
     @staticmethod
-    def _count_page(soup) -> int:
+    def _count_page(soup,count=None) -> int:
+        counts = count if count is not None else CarolerApi.COUNT_PAGE
         try:
             pages = soup.find('ul', {'class': 'page-numbers'}).find_all('li')
-            count_page = 10 if 10 < (c := int(pages[len(pages) - 2].find('a').get('href').split('/')[-2])) else c
+            count_page = counts if 10 < (c := int(pages[len(pages) - 2].find('a').get('href').split('/')[-2])) else c
             return count_page
         except Exception as error:
             print("count_page", error)
@@ -73,8 +71,8 @@ class CarolerApi:
             print('search_music', error)
 
     @classmethod
-    def _list_music_url_page(cls, soup) -> list:
-        count_page = cls._count_page(soup)
+    def _list_music_url_page(cls, soup,count) -> list:
+        count_page = cls._count_page(soup,count)
         list_url_music = []
         if count_page == 0:
             url = f'{CarolerApi.URL}'
@@ -89,7 +87,7 @@ class CarolerApi:
                 'div', {'class': 'poster'}).find('a').get('href') for i in list_item_in_page]
 
         else:
-            for i in range(0, count_page+1):
+            for i in range(0, count_page + 1):
                 url = f'{CarolerApi.URL}page/{i}/'
                 print(url)
                 response = requests.get(url)
@@ -119,14 +117,12 @@ class CarolerApi:
                     title_music = cls._fetch_title_music(soup_detail_music)
                     cover_music = cls._fetch_cover_music(soup_detail_music)
                     link_download = cls._fetch_link_download(soup_detail_music)
-                    ti_me = cls._fetch_time(soup_detail_music)
                     actor = cls._fetch_actor(soup_detail_music)
                     category = cls._fetch_category(soup_detail_music)
                     cls.RESULT_MUSIC.setdefault(url, {
                         'title_music_album': None,
                         'cover_music': cover_music,
                         'link_download': {title_music: dict(zip([128, 320], [link for link in link_download]))},
-                        'time': ti_me,
                         'actor': actor,
                         'category': category})
 
@@ -134,14 +130,14 @@ class CarolerApi:
                     title_music = cls._fetch_title_music(soup_detail_music)
                     cover_music = cls._fetch_cover_music(soup_detail_music)
                     link_download = cls._fetch_link_download_album(soup_detail_music)
-                    ti_me = cls._fetch_time(soup_detail_music)
+
                     actor = cls._fetch_actor(soup_detail_music)
                     category = cls._fetch_category(soup_detail_music)
                     cls.RESULT_MUSIC.setdefault(url, {
                         'title_music_album': title_music,
                         'cover_music': cover_music,
                         'link_download': link_download,
-                        'time': ti_me,
+
                         'actor': actor,
                         'category': category})
         return None
@@ -171,6 +167,7 @@ class CarolerApi:
 
     @staticmethod
     def _fetch_actor(soup_detail_music):
+        print('caroler actor')
         # body > main > div.top > div.left_side.fr > div.up > article > div.singer > a
         try:
             actor = (soup_detail_music.find(
@@ -182,6 +179,7 @@ class CarolerApi:
                 'div', {'class': 'singer'}).find(
                 'a').get_text())
         except Exception:
+            # > main > div.top > div.left_side.fr > div.up > article > div.singer
             actor = (soup_detail_music.find(
                 'main').find('div', {'class': 'top'}).
                      find(
@@ -192,21 +190,6 @@ class CarolerApi:
 
         return actor
         # body > main > div.top > div.left_side.fr > div.down > div.stat > div: nth - child(3) > i
-
-    @staticmethod
-    def _fetch_time(soup_detail_music):
-        ti_me = soup_detail_music.find(
-            'main').find(
-            'div', {'class': 'top'}).find(
-            'div', {'class': 'left_side'}).find(
-            'div', {'class': 'down'}).find(
-            'div', {'class': 'stat'}).childGenerator()
-        times = list(ti_me)[5].get_text().split('\n\n\t\t\t\t\t\t\t')[1].split('\t\t\t\t\t\t')[0].split(' ')
-        for k, vv in CarolerApi.MONT.items():
-                     if times[1] == k:
-                         times[1] = vv
-        time=f"{int(times[2])}-{int(times[1])}-{int(times[0])}"
-        return time
 
     @staticmethod
     def _fetch_category(soup_detail_music):
@@ -228,7 +211,6 @@ class CarolerApi:
                 'div', {'class': 'stat'}).find(
                 'div', {'class': 'item'}).find(
                 'a').get_text()
-
 
         return category
         # body > main > div.top > div.left_side.fr > div.down > div.dlbox.add_dl.end > div: nth - child(1) > a
@@ -269,33 +251,32 @@ class CarolerApi:
         cover_music = soup_detail_music.find(
             'main').find('div', {'class': 'top'}).find(
             'div', {'class': 'poster'}).find('img').get('src').split(' ')
-        return cover_music
+        return  str.join("%20", cover_music)
 
 
 class CreateDateInDatabase:
     @classmethod
     def handler(cls) -> None:
         output_caroler = CarolerApi.RESULT_MUSIC
-        for key, value in output_caroler.items():
-            category = cls._set_category(value['category'])
-            url_detail_page = key
-            cover_music = value['cover_music']
-            actor = value['actor']
-            title_album = value['title_music_album']
-            times=value['time']
-            for title_music, linc_download in value['link_download'].items():
-                print('handler for2')
-                musics, _ = Music.objects.get_or_create(url_detail_page=url_detail_page,
-                                                        title_album=title_album,
-                                                        title_music=title_music,
-                                                        actor_name=actor,
-                                                        url_picture=cover_music,
-                                                        time_music=times,
-                                                        link_downloads_128=linc_download[128],
-                                                        link_downloads_300=linc_download[320])
-                musics.music_category.add(*category)
-                musics.save()
-                print(True)
+        if len(output_caroler) > 0:
+            for key, value in output_caroler.items():
+                category = cls._set_category(value['category'])
+                url_detail_page = key
+                cover_music = value['cover_music']
+                actor = value['actor']
+                title_album = value['title_music_album']
+                for title_music, linc_download in value['link_download'].items():
+                    print('handler for2')
+                    musics, _ = Music.objects.get_or_create(url_detail_page=url_detail_page,
+                                                            title_album=title_album,
+                                                            title_music=title_music,
+                                                            actor_name=actor,
+                                                            url_picture=cover_music,
+                                                            link_downloads_128=linc_download[128],
+                                                            link_downloads_300=linc_download[320])
+                    musics.music_category.add(*category)
+                    musics.save()
+        CarolerApi.RESULT_MUSIC={}
 
     @staticmethod
     def _set_category(list_category: list) -> list:
@@ -409,8 +390,6 @@ class CreateDateInDatabase:
 # for k, vv in MONT.items():
 #                 #     if times[1] == k:
 #                 #         times[1] = vv
-
-
 
 
 #     title_music = ''

@@ -29,7 +29,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = True
 
 ALLOWED_HOSTS = []
-AUTH_USER_MODEL='account.User'
+AUTH_USER_MODEL = 'account.User'
 # Application definition
 MY_APPS = ['account', 'core', 'carolerApi']
 INSTALLED_APPS = [
@@ -59,7 +59,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -83,8 +82,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': '1',
+        'HOST': '0.0.0.0',
+        'PORT': '5432',
     }
 }
 
@@ -111,7 +114,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Tehran'
 
 USE_I18N = True
 
@@ -127,7 +130,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
@@ -139,7 +141,6 @@ CACHES = {
     }
 }
 
-
 REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
@@ -147,12 +148,12 @@ REST_FRAMEWORK = {
         'apps.account.throttling.UsersThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '2/day',
-        'users': '10/day',
-        'vip': '2/min'
+        'anon': '1/day',
+        'users': '3/day',
+        'vip': '50/day'
 
     },
-    'DEFAULT_PERMISSION_CLASSES':{
+    'DEFAULT_PERMISSION_CLASSES': {
         'rest_framework.permissions.IsAuthenticated',
         'apps.account.permissions.VipPermission'
     },

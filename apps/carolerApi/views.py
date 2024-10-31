@@ -18,17 +18,27 @@ from rest_framework.authentication import BasicAuthentication, SessionAuthentica
 
 # Create your views here.
 
-# @method_decorator(cache_page(60 * 10), name='get')
-class MusicCarolerApiListView(ListAPIView):
-    queryset = Music.objects.all().order_by('music_category')
+@method_decorator(cache_page(20), name='get')
+class MusicNewTracksApiListView(ListAPIView):
+    queryset = Music.objects.all().order_by('time_music')[1:10:]
     serializer_class = MusicSerializers
     throttle_classes = [AnonRateThrottle, UsersThrottle, VipThrottling]
     permission_classes = [IsAuthenticated, VipPermission]
     authentication_classes = [SessionAuthentication, BasicAuthentication]
-
     def get(self, request: Request, **kwargs):
         CarolerApi.new_music()
         return Response(self.serializer_class(self.get_queryset(), many=True).data)
+
+
+@method_decorator(cache_page(20), name='get')
+class MusicAllTracksApiListView(ListAPIView):
+    queryset = Music.objects.all().order_by('-music_category')
+    serializer_class = MusicSerializers
+    throttle_classes = [AnonRateThrottle, UsersThrottle, VipThrottling]
+    permission_classes = [IsAuthenticated, VipPermission, ]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+
+
 
 
 class SearchMusicView(APIView):
@@ -52,10 +62,11 @@ class SearchMusicView(APIView):
 
         search_title = f'{title} {actor}'
         CarolerApi.search_music(context=search_title)
-        music = Music.objects.filter(Q(title_music__icontains=title) |
-                                     Q(actor_name__icontains=actor)) if title in ['البوم', 'آلبوم'] else (
-            Music.objects.filter(actor_name=actor))
-        print(title in ['البوم', 'آلبوم'])
+        music = Music.objects.filter(actor_name=actor,
+                                     title_music__contains=title) if title in ['البوم', 'آلبوم',
+                                                                               'album'] else Music.objects.filter(
+            Q(title_music__icontains=title) | Q(actor_name__icontains=actor))
+        print(music)
         if music.exists():
             serializer = MusicSerializers(music, many=True)
             return Response(serializer.data)
