@@ -23,8 +23,9 @@ class MusicNewTracksApiListView(ListAPIView):
     queryset = Music.objects.all().order_by('time_music')[1:10:]
     serializer_class = MusicSerializers
     throttle_classes = [AnonRateThrottle, UsersThrottle, VipThrottling]
-    permission_classes = [IsAuthenticated, VipPermission]
+    permission_classes = [VipPermission]
     authentication_classes = [SessionAuthentication, BasicAuthentication]
+
     def get(self, request: Request, **kwargs):
         CarolerApi.new_music()
         return Response(self.serializer_class(self.get_queryset(), many=True).data)
@@ -35,10 +36,8 @@ class MusicAllTracksApiListView(ListAPIView):
     queryset = Music.objects.all().order_by('-music_category')
     serializer_class = MusicSerializers
     throttle_classes = [AnonRateThrottle, UsersThrottle, VipThrottling]
-    permission_classes = [IsAuthenticated, VipPermission, ]
+    permission_classes = [VipPermission]
     authentication_classes = [SessionAuthentication, BasicAuthentication]
-
-
 
 
 class SearchMusicView(APIView):

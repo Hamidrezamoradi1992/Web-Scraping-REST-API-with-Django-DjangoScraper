@@ -148,9 +148,9 @@ REST_FRAMEWORK = {
         'apps.account.throttling.UsersThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '1/day',
-        'users': '3/day',
-        'vip': '50/day'
+        'anon': '2/day',
+        'users': '10/day',
+        'vip': '20/day'
 
     },
     'DEFAULT_PERMISSION_CLASSES': {
